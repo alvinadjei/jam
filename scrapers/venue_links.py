@@ -1,3 +1,4 @@
+import csv
 from requests_html import HTML, HTMLSession
 
 # Start session
@@ -11,7 +12,9 @@ calendar = r.html.find('tbody', first=True)
 
 # Extract venue links
 cal_rows = calendar.find('tr')[1:]
-for row in cal_rows:
-    for link in row.absolute_links:
-        if 'joerizzo' not in link:
-            print(link)
+with open("scrapers/links.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    for row in cal_rows:
+        for link in row.absolute_links:
+            if 'joerizzo' not in link:
+                writer.writerow([link])
