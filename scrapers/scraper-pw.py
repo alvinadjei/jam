@@ -11,8 +11,9 @@ def fetch_page(url):
         browser.close()
         return content
 
-url = "https://riptidesf.com/index.html"
+url = "https://smileyssaloon.com/music/"
 data = fetch_page(url)
 html = HTML(html=data)  # This prints the rendered HTML
-cal = html.find('tbody', first=True)
-print(cal.html)
+events = html.find('.event')
+for event in events:
+    print(event.html)
