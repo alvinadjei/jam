@@ -1,13 +1,15 @@
 import os
 from dotenv import load_dotenv
-from together import Together
+from google import genai
 from playwright.sync_api import sync_playwright
 from requests_html import HTML
 
-# 🔹 Access together API
-load_dotenv()  # Load environment variables from .env file
-TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")  # Read API key from environment variable
-client = Together(api_key=TOGETHER_API_KEY)  # Initialize client
+# Load environment variables from .env file
+load_dotenv()
+
+# # 🔹 Access together API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=GEMINI_API_KEY)
  
 def fetch_page(url):
     """Fetch html from input url
@@ -29,59 +31,67 @@ def fetch_page(url):
 
 def parse_events(content):
     html = HTML(html=content)  # This prints the rendered HTML
-    return html.find('ul')[2].html
-    # return [ul.html for ul in html.find('ul')]
+    td_events = html.find('td')  # Events in table/calendaρ
+    li_events = html.find('li')  # Events in list
+    return {'li': [li.html for li in li_events], 'td': [td.html for td in td_events]}
 
 
-# Function to send extracted <ul> to Llama 3.3 for event parsing
-def extract_event_info(ul_elements):
-    """Sends <ul> elements to Llama 3.3 API to extract structured event details"""
+# Function to send extracted html to Llama 3.3 for event parsing
+def extract_event(component, component_type):
+        
+    """Sends html elements to Llama 3.3 API to extract structured event details"""
     
-    prompt = f"""Extract event details (name, artist, date, description) from the following HTML list elements. Return JSON format only:
+    prompt = f"""Extract music performance event details (artist, date, time) from the following HTML {component_type} element if it contains event info. If it doesn't contain event info, feel free to just return the string "None". Otherwise, return JSON format only:
     
-    {ul_elements}
+    {component}
 
     Example output:
     {{
       "events": [
         {{
-          "event_name": "Jazz Night at The Club",
           "artist": "John Doe Trio",
           "date": "March 10, 2025",
-          "description": "A live jazz performance in downtown SF."
+          "time": 8:00 p.m.,
         }},
         ...
       ]
     }}
     """
     
-    response = client.chat.completions.create(
-        model="meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=None,
-        temperature=0.0,  # Keep deterministic output
-        top_p=0.7,
-        top_k=50,
-        repetition_penalty=1,
-        stop=["<|eot_id|>", "<|eom_id|>"],
-        stream=False  # Set to True if you want streaming output
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-lite",  # 30 RPM, 1500 RPD, 1,000,000 TPM
+        contents=prompt,
     )
-
-    return response.choices[0].message.content  # Extract Llama response
+    
+    return response.text  # Extract Gemini response
 
 
 def scrape_events(url):
     html = fetch_page(url)
-    ul_elements = parse_events(html)
-    
-    if not ul_elements:
-        print("No <ul> elements found on the page.")
-        return None
+    li_events, td_events = parse_events(html)['li'], parse_events(html)['td']
 
-    extracted_data = extract_event_info(ul_elements)
-    return extracted_data
+    if not li_events and not td_events:
+        print("No events found on the page.")
+    
+    parsed_events = []
+    
+    # Feed <li> components to Gemini
+    for event in li_events:
+        parsed_event = extract_event(event, '<li>')
+        if parsed_event != "None\n":
+            parsed_events.append(parsed_event)
+    
+    # Feed <td> components to Gemini
+    for event in td_events:
+        parsed_event = extract_event(event, '<td>')
+        if parsed_event != "None\n":
+            parsed_events.append(parsed_event)
+
+    return parsed_events
 
 # Url with html to parse
-page = "https://www.waystonesf.com/calendar"
-event_data = scrape_events(page)
-print(event_data)
+if __name__ == "__main__":
+    page = "https://www.waystonesf.com/calendar"
+    events = scrape_events(page)
+    for event in events:
+        print(event)

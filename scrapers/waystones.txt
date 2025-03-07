@@ -1,0 +1,50 @@
+```json
+{
+  "events": [
+    {
+      "artist": "Stu Silverman Trio",
+      "date": "Mar 09, 2025",
+      "time": "6:00 PM – 9:00 PM"
+    }
+  ]
+}
+```
+```json
+{
+  "events": [
+    {
+      "artist": "Jazz Jam",
+      "date": "Mar 10, 2025",
+      "time": "6:00 PM – 9:00 PM"
+    }
+  ]
+}
+```
+```json
+{
+  "artist": "Sami Stevens",
+  "date": "Mar 11, 2025",
+  "time": "6:00 PM – 9:00 PM"
+}
+```
+```json
+{
+  "events": [
+    {
+      "artist": "Smith Dobson Duo",
+      "date": "Mar 16, 2025",
+      "time": "6:00 PM – 9:00 PM"
+    }
+  ]
+}
+```
+```json
+{
+  "events": [
+    {
+      "artist": "Jazz Jam",
+      "date": "Mar 17, 2025",
+      "time": "6:00 PM – 9:00 PM"
+    }
+  ]
+}
